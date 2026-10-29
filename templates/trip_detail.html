@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, lv, approval_panel with context %}
+{% block title %}出差报告{% endblock %}
+{% block body %}
+<div class="head"><h1>出差报告 {{ tag(t.status) }}</h1>
+  <div class="actions" style="margin:0">
+    {% if mine and t.status in ('draft', 'rejected') %}
+    <a class="btn" href="{{ url_for('visit_form', trip_id=t.id) }}">+ 添加拜访记录</a>
+    <a class="btn light" href="{{ url_for('trip_form', tid=t.id) }}">修改</a>
+    <form method="post" action="{{ url_for('trip_submit', tid=t.id) }}" onsubmit="return confirm('提交后不能修改, 确定提交?')">
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><button class="btn ok">提交审批</button></form>
+    <form method="post" action="{{ url_for('trip_delete', tid=t.id) }}" onsubmit="return confirm('确定删除该出差报告?')">
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><button class="btn danger">删除</button></form>
+    {% endif %}
+    <button class="btn light no-print" onclick="window.print()">打印</button>
+  </div>
+</div>
+<div class="card"><dl class="info">
+  <dt>销售员</dt><dd>{{ t.sales }}</dd>
+  <dt>出差时间</dt><dd>{{ t.start_date }} ~ {{ t.end_date }}</dd>
+  <dt>出差地点</dt><dd>{{ t.destination }}{{ ' · ' ~ t.transport if t.transport }}</dd>
+  <dt>出差目的</dt><dd class="prose">{{ t.purpose or '-' }}</dd>
+  <dt>费用</dt><dd>交通 {{ t.cost_transport|money }} · 住宿 {{ t.cost_hotel|money }} · 餐补 {{ t.cost_meal|money }} · 其他 {{ t.cost_other|money }}
+    = <strong>{{ trip_cost(t)|money }} 元</strong>
+    {% if visits %}<span class="hint">(单次拜访成本 {{ (trip_cost(t) / visits|length)|money }} 元)</span>{% endif %}</dd>
+  <dt>出差总结</dt><dd class="prose">{{ t.summary or '-' }}</dd>
+</dl></div>
+<div class="card"><h2>拜访明细 ({{ visits|length }})</h2>
+  <div class="table-wrap"><table>
+    <tr><th>日期</th><th>客户</th><th>类型</th><th>洽谈人员</th><th>洽谈内容</th><th>成果/下一步</th></tr>
+    {% for v in visits %}
+    <tr><td>{{ v.visit_date }}<div class="hint">{{ v.start_time }}{{ '-' ~ v.end_time if v.end_time }}</div></td>
+      <td>{{ lv(v.level) }} <a href="{{ url_for('visit_detail', vid=v.id) }}">{{ v.customer }}</a></td>
+      <td>{{ v.visit_type }}</td>
+      <td>{{ v.contact_name }} {{ v.contact_title }}{% if v.attendees %}<div class="hint">{{ v.attendees }}</div>{% endif %}</td>
+      <td class="prose">{{ v.content }}</td><td class="prose">{{ v.result }}{% if v.next_step %}<div class="hint">→ {{ v.next_step }}</div>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="6" class="empty">还没有拜访记录{% if mine %}, <a href="{{ url_for('visit_form', trip_id=t.id) }}">现在添加</a>{% endif %}</td></tr>{% endfor %}
+  </table></div>
+</div>
+{{ approval_panel('trip', t.id, approvals, can_approve, can_comment) }}
+{% endblock %}

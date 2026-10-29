@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, user_select with context %}
+{% block title %}周报{% endblock %}
+{% block body %}
+<div class="head"><h1>销售周报</h1><a class="btn" href="{{ url_for('weekly_form') }}">+ 写本周周报</a></div>
+{% if me.role != 'sales' %}
+<form class="card filters" method="get">{{ user_select(users, a.user_id) }}<button class="btn light">查询</button></form>
+{% endif %}
+<div class="card table-wrap"><table>
+  <tr><th>周次</th><th>销售员</th><th>本周总结</th><th>状态</th><th class="hide-sm">更新时间</th></tr>
+  {% for w in rows %}
+  {% set mon = parse_date(w.week_start) %}
+  <tr><td><a href="{{ url_for('weekly_detail', wid=w.id) }}">{{ w.week_start }} ~ {{ (mon + timedelta(days=6)).isoformat()[5:] }}</a></td>
+    <td>{{ w.sales }}</td><td class="clip">{{ w.summary }}</td><td>{{ tag(w.status) }}</td>
+    <td class="hint hide-sm">{{ w.updated_at }}</td></tr>
+  {% else %}<tr><td colspan="5" class="empty">暂无周报</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

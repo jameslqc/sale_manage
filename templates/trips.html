@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, user_select with context %}
+{% block title %}出差报告{% endblock %}
+{% block body %}
+<div class="head"><h1>出差报告</h1><a class="btn" href="{{ url_for('trip_form') }}">+ 新建出差报告</a></div>
+<form class="card filters" method="get">
+  <div class="field"><label>月份</label><input type="month" name="month" value="{{ a.month }}"></div>
+  {% if me.role != 'sales' %}{{ user_select(users, a.user_id) }}{% endif %}
+  <div class="field"><label>状态</label><select name="status"><option value="">全部</option>
+    {% for k in ['draft','submitted','approved','rejected'] %}<option value="{{ k }}" {{ 'selected' if a.status == k }}>{{ STATUS[k][0] }}</option>{% endfor %}</select></div>
+  <button class="btn light">查询</button>
+</form>
+<div class="card table-wrap"><table>
+  <tr><th>出差日期</th><th>目的地</th><th>销售员</th><th class="num">天数</th><th class="num">拜访</th><th class="num">费用(元)</th><th>状态</th></tr>
+  {% for t in rows %}
+  <tr><td><a href="{{ url_for('trip_detail', tid=t.id) }}">{{ t.start_date }} ~ {{ t.end_date }}</a></td>
+    <td>{{ t.destination }}</td><td>{{ t.sales }}</td>
+    <td class="num">{{ t.days }}</td>
+    <td class="num">{{ t.nvisits }}</td><td class="num">{{ trip_cost(t)|money }}</td><td>{{ tag(t.status) }}</td></tr>
+  {% else %}<tr><td colspan="7" class="empty">暂无出差报告</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import lv, user_select with context %}
+{% block title %}统计分析{% endblock %}
+{% block body %}
+<div class="head"><h1>统计分析</h1>
+  <a class="btn" href="{{ url_for('stats_export', **a) }}">导出 Excel</a></div>
+<form class="card filters" method="get">
+  <div class="field"><label>开始日期</label><input type="date" name="start" value="{{ a.start }}"></div>
+  <div class="field"><label>结束日期</label><input type="date" name="end" value="{{ a.end }}"></div>
+  {% if me.role != 'sales' %}{{ user_select(users, a.user_id) }}{% endif %}
+  <div class="field"><label>客户</label><select name="customer_id"><option value="">全部</option>
+    {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if a.customer_id == c.id|string }}>{{ c.name }}</option>{% endfor %}</select></div>
+  <div class="field"><label>拜访类型</label><select name="visit_type"><option value="">全部</option>
+    {% for t in types %}<option {{ 'selected' if a.visit_type == t }}>{{ t }}</option>{% endfor %}</select></div>
+  <div class="field"><label>关键字</label><input name="kw" value="{{ a.kw or '' }}"></div>
+  <button class="btn light">统计</button>
+</form>
+
+{% set total = by_sales|sum(attribute='n') %}
+<div class="card"><h2>按销售员</h2><div class="table-wrap"><table>
+  <tr><th>销售员</th><th class="num">拜访次数</th><th class="num">客户数</th><th class="num">拜访天数</th><th class="num">首次拜访</th>
+    <th class="num">出差次数</th><th class="num">出差天数</th><th class="num">差旅费(元)</th><th class="num">商机(万)</th></tr>
+  {% for r in by_sales %}{% set t = trips_by.get(r.id) %}
+  <tr><td>{{ r.name }}</td><td class="num">{{ r.n }}</td><td class="num">{{ r.nc }}</td><td class="num">{{ r.ndays }}</td><td class="num">{{ r.nfirst }}</td>
+    <td class="num">{{ t.n if t else 0 }}</td><td class="num">{{ t.days|int if t else 0 }}</td><td class="num">{{ (t.cost if t else 0)|money }}</td>
+    <td class="num">{{ r.amount }}</td></tr>
+  {% else %}<tr><td colspan="9" class="empty">所选范围内无数据</td></tr>{% endfor %}
+</table></div></div>
+
+<div class="cols">
+  <div class="card"><h2>按拜访类型</h2><table>
+    {% for r in by_type %}<tr><td>{{ r.visit_type }}</td><td style="width:50%"><div class="meter"><span style="width:{{ (r.n / total * 100)|round }}%"></span></div></td><td class="num">{{ r.n }}</td></tr>
+    {% else %}<tr><td class="empty">无</td></tr>{% endfor %}</table></div>
+  <div class="card"><h2>按客户 (前 100)</h2><div class="table-wrap" style="max-height:360px;overflow-y:auto"><table>
+    <tr><th>客户</th><th class="num">次数</th><th>最近</th><th>拜访销售</th><th>洽谈人员</th></tr>
+    {% for r in by_customer %}<tr><td>{{ lv(r.level) }} <a href="{{ url_for('customer_detail', cid=r.id) }}">{{ r.name }}</a></td>
+      <td class="num">{{ r.n }}</td><td>{{ r.last }}</td><td>{{ r.sales }}</td><td>{{ r.contacts }}</td></tr>
+    {% else %}<tr><td colspan="5" class="empty">无</td></tr>{% endfor %}</table></div></div>
+</div>
+
+<div class="card"><h2>拜访明细 (最近 200 条, 完整数据请导出 Excel)</h2><div class="table-wrap"><table>
+  <tr><th>日期</th><th>时间</th><th>销售员</th><th>客户</th><th>类型</th><th>洽谈人员</th><th>洽谈内容</th><th>成果</th></tr>
+  {% for v in detail %}<tr><td>{{ v.visit_date }}</td><td class="hint">{{ v.start_time }}{{ '-' ~ v.end_time if v.end_time }}</td>
+    <td>{{ v.sales }}</td><td><a href="{{ url_for('visit_detail', vid=v.id) }}">{{ v.customer }}</a></td><td>{{ v.visit_type }}</td>
+    <td>{{ v.contact_name }} {{ v.contact_title }}{% if v.attendees %}<div class="hint">{{ v.attendees }}</div>{% endif %}</td>
+    <td class="clip">{{ v.content }}</td><td class="clip">{{ v.result }}</td></tr>
+  {% else %}<tr><td colspan="8" class="empty">无</td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

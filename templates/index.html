@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, lv with context %}
+{% block title %}首页{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>你好, {{ me.name }}</h1>
+  <div class="actions" style="margin:0">
+    <a class="btn" href="{{ url_for('visit_form') }}">+ 填写拜访记录</a>
+    <a class="btn light" href="{{ url_for('trip_form') }}">+ 新建出差报告</a>
+    {% if has_weekly %}
+    <a class="btn light" href="{{ url_for('weekly_detail', wid=has_weekly.id) }}">本周周报 · {{ STATUS[has_weekly.status][0] }}</a>
+    {% else %}
+    <a class="btn light" href="{{ url_for('weekly_form', week=this_week) }}">+ 写本周周报</a>
+    {% endif %}
+  </div>
+</div>
+
+{% for r in rejected %}
+<div class="flash warn">你的{{ r.label }} ({{ r.d }} {{ r.title }}) 被退回, <a href="{{ r.url }}">查看审批意见并修改</a></div>
+{% endfor %}
+
+<div class="kpis">
+  <div class="kpi"><div class="label">{{ month }} 拜访次数{{ '(团队)' if me.role != 'sales' }}</div><div class="value">{{ mv.c }}</div></div>
+  <div class="kpi"><div class="label">覆盖客户数</div><div class="value">{{ mv.cc }}</div></div>
+  <div class="kpi"><div class="label">本月出差次数</div><div class="value">{{ mt.c }}</div></div>
+  <div class="kpi"><div class="label">本月差旅费用 (元)</div><div class="value">{{ mt.cost|money }}</div></div>
+  {% if me.role != 'sales' %}
+  <div class="kpi"><div class="label">待我审批</div><div class="value"><a href="{{ url_for('approvals') }}">{{ pending_count }}</a></div></div>
+  {% endif %}
+</div>
+
+<div class="cols">
+  <div class="card">
+    <h2>近期拜访</h2>
+    <div class="table-wrap"><table>
+      <tr><th>日期</th><th>客户</th>{% if me.role != 'sales' %}<th>销售员</th>{% endif %}<th>类型</th></tr>
+      {% for v in recent %}
+      <tr><td>{{ v.visit_date }}</td><td><a href="{{ url_for('visit_detail', vid=v.id) }}">{{ v.customer }}</a></td>
+        {% if me.role != 'sales' %}<td>{{ v.sales }}</td>{% endif %}<td>{{ v.visit_type }}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty">暂无拜访记录</td></tr>{% endfor %}
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>近 7 天待跟进</h2>
+    <div class="table-wrap"><table>
+      <tr><th>跟进日期</th><th>客户</th>{% if me.role != 'sales' %}<th>销售员</th>{% endif %}<th>下一步</th></tr>
+      {% for v in followups %}
+      <tr><td>{{ v.next_date }}{% if v.next_date < today %} <span class="tag red">逾期</span>{% endif %}</td>
+        <td><a href="{{ url_for('customer_detail', cid=v.customer_id) }}">{{ v.customer }}</a></td>
+        {% if me.role != 'sales' %}<td>{{ v.sales }}</td>{% endif %}<td class="clip">{{ v.next_step }}</td></tr>
+      {% else %}<tr><td colspan="4" class="empty">暂无待跟进事项</td></tr>{% endfor %}
+    </table></div>
+  </div>
+</div>
+{% endblock %}

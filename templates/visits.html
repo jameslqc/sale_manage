@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_macros.html" import lv, user_select with context %}
+{% block title %}拜访记录{% endblock %}
+{% block body %}
+<div class="head"><h1>客户拜访记录</h1><a class="btn" href="{{ url_for('visit_form') }}">+ 填写拜访记录</a></div>
+<form class="card filters" method="get">
+  <div class="field"><label>开始日期</label><input type="date" name="start" value="{{ a.start }}"></div>
+  <div class="field"><label>结束日期</label><input type="date" name="end" value="{{ a.end }}"></div>
+  {% if me.role != 'sales' %}{{ user_select(users, a.user_id) }}{% endif %}
+  <div class="field"><label>客户</label><select name="customer_id"><option value="">全部</option>
+    {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if a.customer_id == c.id|string }}>{{ c.name }}</option>{% endfor %}</select></div>
+  <div class="field"><label>类型</label><select name="visit_type"><option value="">全部</option>
+    {% for t in types %}<option {{ 'selected' if a.visit_type == t }}>{{ t }}</option>{% endfor %}</select></div>
+  <div class="field"><label>关键字</label><input name="kw" value="{{ a.kw or '' }}" placeholder="内容/人员/客户"></div>
+  <button class="btn light">查询</button>
+</form>
+<div class="card table-wrap"><table>
+  <tr><th>日期</th><th>客户</th><th>销售员</th><th>类型</th><th>洽谈人员</th><th class="hide-sm">洽谈内容</th><th class="hide-sm">出差</th></tr>
+  {% for v in rows %}
+  <tr><td>{{ v.visit_date }}</td>
+    <td>{{ lv(v.level) }} <a href="{{ url_for('visit_detail', vid=v.id) }}">{{ v.customer }}</a></td>
+    <td>{{ v.sales }}</td><td>{{ v.visit_type }}</td>
+    <td>{{ v.contact_name }} <span class="hint">{{ v.contact_title }}</span></td>
+    <td class="clip hide-sm">{{ v.content }}</td>
+    <td class="hide-sm">{% if v.trip_id %}<a href="{{ url_for('trip_detail', tid=v.trip_id) }}">{{ v.trip_dest }}</a>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="7" class="empty">没有符合条件的记录</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

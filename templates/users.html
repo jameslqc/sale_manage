@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}账号管理{% endblock %}
+{% block body %}
+<div class="head"><h1>账号管理</h1><a class="btn" href="{{ url_for('user_form') }}">+ 新增账号</a></div>
+<div class="card table-wrap"><table>
+  <tr><th>用户名</th><th>姓名</th><th>角色</th><th>所属主管</th><th>区域</th><th>电话</th><th>状态</th><th></th></tr>
+  {% for u in rows %}
+  <tr><td>{{ u.username }}</td><td>{{ u.name }}</td><td>{{ ROLES[u.role] }}</td><td>{{ u.manager_name or '-' }}</td>
+    <td>{{ u.region }}</td><td>{{ u.phone }}</td>
+    <td>{% if u.active %}<span class="tag green">启用</span>{% else %}<span class="tag gray">停用</span>{% endif %}</td>
+    <td><a href="{{ url_for('user_form', uid=u.id) }}">编辑</a></td></tr>
+  {% endfor %}
+</table></div>
+<p class="hint">员工离职请"停用"账号而非删除, 以保留其历史拜访数据; 其负责客户可在客户名单中改派。</p>
+{% endblock %}

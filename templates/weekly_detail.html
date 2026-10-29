@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, lv, approval_panel with context %}
+{% block title %}周报{% endblock %}
+{% block body %}
+<div class="head"><h1>{{ w.sales }} 周报 {{ w.week_start }} ~ {{ sunday }} {{ tag(w.status) }}</h1>
+  <div class="actions" style="margin:0">
+  {% if mine and w.status in ('draft', 'rejected') %}
+    <a class="btn light" href="{{ url_for('weekly_form', wid=w.id) }}">修改</a>
+    <form method="post" action="{{ url_for('weekly_submit', wid=w.id) }}"><input type="hidden" name="_csrf" value="{{ csrf }}">
+      <button class="btn ok">提交</button></form>
+  {% endif %}
+  <button class="btn light no-print" onclick="window.print()">打印</button></div>
+</div>
+<div class="card"><dl class="info">
+  <dt>本周总结</dt><dd class="prose">{{ w.summary }}</dd>
+  <dt>问题与支持</dt><dd class="prose">{{ w.problems or '-' }}</dd>
+  <dt>下周计划</dt><dd class="prose">{{ w.next_plan or '-' }}</dd>
+</dl></div>
+<div class="card"><h2>本周拜访 ({{ visits|length }})</h2>
+  <div class="table-wrap"><table>
+    <tr><th>日期</th><th>客户</th><th>类型</th><th>洽谈人</th><th>内容</th></tr>
+    {% for v in visits %}
+    <tr><td>{{ v.visit_date }}</td><td>{{ lv(v.level) }} <a href="{{ url_for('visit_detail', vid=v.id) }}">{{ v.customer }}</a></td>
+      <td>{{ v.visit_type }}</td><td>{{ v.contact_name }} {{ v.contact_title }}</td><td class="prose">{{ v.content }}</td></tr>
+    {% else %}<tr><td colspan="5" class="empty">本周无拜访记录</td></tr>{% endfor %}
+  </table></div>
+</div>
+{{ approval_panel('weekly', w.id, approvals, can_approve, can_comment) }}
+{% endblock %}

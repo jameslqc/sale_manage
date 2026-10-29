@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}操作日志{% endblock %}
+{% block body %}
+<h1>操作日志 (最近 300 条)</h1>
+<div class="card table-wrap"><table>
+  <tr><th>时间</th><th>用户</th><th>操作</th><th>详情</th><th>IP</th></tr>
+  {% for l in rows %}<tr><td>{{ l.created_at }}</td><td>{{ l.name or '-' }}</td><td>{{ l.action }}</td><td>{{ l.detail }}</td><td>{{ l.ip }}</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}销售拜访管理{% endblock %} - 销售拜访管理系统</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if me %}
+{% set ep = request.endpoint or '' %}
+<header class="topbar"><div class="inner">
+  <a class="brand" href="{{ url_for('index') }}">销售拜访管理系统</a>
+  <nav>
+    <a href="{{ url_for('index') }}" class="{{ 'on' if ep == 'index' }}">首页</a>
+    <a href="{{ url_for('visits') }}" class="{{ 'on' if ep.startswith('visit') }}">拜访记录</a>
+    <a href="{{ url_for('trips') }}" class="{{ 'on' if ep.startswith('trip') }}">出差报告</a>
+    <a href="{{ url_for('weekly') }}" class="{{ 'on' if ep.startswith('weekly') }}">周报</a>
+    <a href="{{ url_for('monthly') }}" class="{{ 'on' if ep.startswith('monthly') }}">月度报告</a>
+    <a href="{{ url_for('customers') }}" class="{{ 'on' if ep.startswith('customer') }}">客户名单</a>
+    <a href="{{ url_for('stats') }}" class="{{ 'on' if ep.startswith('stats') }}">统计分析</a>
+    {% if me.role in ('manager', 'admin') %}
+    <a href="{{ url_for('approvals') }}" class="{{ 'on' if ep == 'approvals' }}">待审批{% if pending_count %}<span class="badge-num">{{ pending_count }}</span>{% endif %}</a>
+    {% endif %}
+    {% if me.role == 'admin' %}
+    <a href="{{ url_for('users') }}" class="{{ 'on' if ep.startswith('user') }}">账号管理</a>
+    <a href="{{ url_for('logs') }}" class="{{ 'on' if ep == 'logs' }}">日志</a>
+    {% endif %}
+  </nav>
+  <div class="user">{{ me.name }} · {{ ROLES[me.role] }}
+    <a href="{{ url_for('change_password') }}">改密</a><a href="{{ url_for('logout') }}">退出</a></div>
+</div></header>
+{% endif %}
+<main>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+  {% block body %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

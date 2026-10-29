@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, lv, user_select with context %}
+{% block title %}客户名单{% endblock %}
+{% block body %}
+<div class="head"><h1>客户名单</h1>
+  <a class="btn" href="{{ url_for('customer_form') }}">{{ '+ 新增客户' if me.role != 'sales' else '+ 申请新增客户' }}</a></div>
+<form class="card filters" method="get">
+  <div class="field"><label>关键字</label><input name="kw" value="{{ a.kw or '' }}" placeholder="名称/地区/行业"></div>
+  <div class="field"><label>等级</label><select name="level"><option value="">全部</option>
+    {% for l in 'ABC' %}<option {{ 'selected' if a.level == l }}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="field"><label>状态</label><select name="status"><option value="">全部</option>
+    {% for k in ['active','pending','disabled'] %}<option value="{{ k }}" {{ 'selected' if a.status == k }}>{{ STATUS[k][0] }}</option>{% endfor %}</select></div>
+  {{ user_select(owners, a.owner_id, 'owner_id', '负责销售') }}
+  <button class="btn light">查询</button>
+</form>
+{% if me.role != 'sales' %}
+<form class="card filters" method="post" action="{{ url_for('customer_import') }}" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="field" style="max-width:none;flex:2"><label>批量导入 Excel (.xlsx) — 第一行为表头, 列顺序: 客户名称 / 等级(A/B/C) / 行业 / 地区 / 地址 / 负责销售(姓名或用户名)</label>
+    <input type="file" name="file" accept=".xlsx" required></div>
+  <button class="btn light">导入</button>
+</form>
+{% endif %}
+<div class="card table-wrap"><table>
+  <tr><th>等级</th><th>客户名称</th><th>行业</th><th>地区</th><th>负责销售</th><th class="num">拜访次数</th><th>最近拜访</th><th>状态</th></tr>
+  {% for c in rows %}
+  <tr><td>{{ lv(c.level) }}</td><td><a href="{{ url_for('customer_detail', cid=c.id) }}">{{ c.name }}</a></td>
+    <td>{{ c.industry }}</td><td>{{ c.region }}</td><td>{{ c.owner_name or '-' }}</td>
+    <td class="num">{{ c.nvisits }}</td><td>{{ c.last_visit or '-' }}</td>
+    <td>{{ tag(c.status) }}
+      {% if c.status == 'pending' and me.role != 'sales' %}
+      <form method="post" action="{{ url_for('customer_approve', cid=c.id) }}" style="display:inline">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <button class="btn ok sm" name="ok" value="1">通过</button><button class="btn danger sm">驳回</button></form>
+      {% endif %}</td></tr>
+  {% else %}<tr><td colspan="8" class="empty">暂无客户</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

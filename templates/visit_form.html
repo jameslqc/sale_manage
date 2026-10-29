@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ '修改' if v else '填写' }}拜访记录{% endblock %}
+{% block body %}
+<h1>{{ '修改' if v else '填写' }}客户拜访记录</h1>
+<form class="card" method="post">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="grid">
+    <div class="field full"><label>客户 <span class="req">*</span></label>
+      <input id="cust-search" placeholder="输入关键字筛选客户名单…" autocomplete="off">
+      <select name="customer_id" id="customer" required size="1">
+        <option value="">-- 从客户名单中选择 --</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}" {{ 'selected' if form.customer_id|string == c.id|string }}>[{{ c.level }}] {{ c.name }}{{ ' · ' ~ c.region if c.region }}</option>
+        {% endfor %}
+      </select>
+      <span class="hint">名单中没有? <a href="{{ url_for('customer_form') }}" target="_blank">申请新增客户</a> (主管审核后可选)</span></div>
+    <div class="field"><label>拜访日期 <span class="req">*</span></label>
+      <input type="date" name="visit_date" value="{{ form.visit_date or today }}" max="{{ today }}" required></div>
+    <div class="field"><label>开始时间</label><input type="time" name="start_time" value="{{ form.start_time or '' }}"></div>
+    <div class="field"><label>结束时间</label><input type="time" name="end_time" value="{{ form.end_time or '' }}"></div>
+    <div class="field"><label>拜访类型</label><select name="visit_type">
+      {% for t in types %}<option {{ 'selected' if (form.visit_type or '回访') == t }}>{{ t }}</option>{% endfor %}</select></div>
+    <div class="field"><label>所属出差行程</label><select name="trip_id"><option value="">非出差 (本地拜访)</option>
+      {% for t in trips %}<option value="{{ t.id }}" {{ 'selected' if (form.trip_id or preset_trip)|string == t.id|string }}>{{ t.start_date }}~{{ t.end_date }} {{ t.destination }}</option>{% endfor %}</select></div>
+
+    <div class="field"><label>洽谈人 <span class="req">*</span></label>
+      <input name="contact_name" id="contact_name" list="contact-list" value="{{ form.contact_name or '' }}" required autocomplete="off">
+      <datalist id="contact-list"></datalist></div>
+    <div class="field"><label>职务</label><input name="contact_title" id="contact_title" value="{{ form.contact_title or '' }}"></div>
+    <div class="field"><label>联系电话</label><input name="contact_phone" id="contact_phone" value="{{ form.contact_phone or '' }}"></div>
+    <div class="field"><label>其他参与人员</label><input name="attendees" value="{{ form.attendees or '' }}" placeholder="客户方/我方其他人员, 用逗号分隔"></div>
+
+    <div class="field full"><label>洽谈内容 <span class="req">*</span></label>
+      <textarea name="content" required minlength="10" placeholder="客户需求、沟通要点、客户反馈、竞品情况等">{{ form.content or '' }}</textarea></div>
+    <div class="field full"><label>拜访成果</label>
+      <textarea name="result" style="min-height:60px" placeholder="达成的共识、获取的信息、送样/报价等">{{ form.result or '' }}</textarea></div>
+    <div class="field"><label>商机阶段</label><select name="stage">
+      {% for s in stages %}<option value="{{ s }}" {{ 'selected' if form.stage == s }}>{{ s or '-- 无 --' }}</option>{% endfor %}</select></div>
+    <div class="field"><label>预计商机金额 (万元)</label><input type="number" step="0.01" min="0" name="amount" value="{{ form.amount or '' }}"></div>
+    <div class="field"><label>下一步计划</label><input name="next_step" value="{{ form.next_step or '' }}"></div>
+    <div class="field"><label>下次跟进日期</label><input type="date" name="next_date" value="{{ form.next_date or '' }}"></div>
+  </div>
+  <div class="actions">
+    <button class="btn">保存</button>
+    {% if not v %}<button class="btn light" name="again" value="1">保存并继续填写下一条</button>{% endif %}
+    <a class="btn light" href="{{ url_for('visits') }}">取消</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var search = document.getElementById('cust-search'), sel = document.getElementById('customer');
+  search.addEventListener('input', function () {
+    var kw = search.value.trim().toLowerCase(), first = null;
+    Array.prototype.forEach.call(sel.options, function (o, i) {
+      if (i === 0) return;
+      var hit = !kw || o.text.toLowerCase().indexOf(kw) >= 0;
+      o.hidden = !hit;
+      if (hit && !first) first = o;
+    });
+    if (kw && first) { sel.value = first.value; loadContacts(); }
+  });
+  var contacts = [];
+  function loadContacts() {
+    if (!sel.value) return;
+    fetch('{{ url_for("api_contacts") }}?customer_id=' + sel.value).then(function (r) { return r.json(); })
+      .then(function (list) {
+        contacts = list;
+        document.getElementById('contact-list').innerHTML = list.map(function (c) {
+          return '<option value="' + c.name.replace(/"/g, '&quot;') + '">';
+        }).join('');
+      });
+  }
+  sel.addEventListener('change', loadContacts);
+  loadContacts();
+  document.getElementById('contact_name').addEventListener('change', function () {
+    var name = this.value;
+    contacts.forEach(function (c) {
+      if (c.name === name) {
+        var t = document.getElementById('contact_title'), p = document.getElementById('contact_phone');
+        if (!t.value) t.value = c.title;
+        if (!p.value) p.value = c.phone;
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

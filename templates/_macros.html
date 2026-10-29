@@ -1,0 +1,49 @@
+{% macro tag(status) -%}
+{% set s = STATUS.get(status, (status, 'gray')) %}<span class="tag {{ s[1] }}">{{ s[0] }}</span>
+{%- endmacro %}
+
+{% macro lv(level) -%}<span class="lv lv-{{ level }}">{{ level }}</span>{%- endmacro %}
+
+{% macro approval_panel(target, tid, approvals, can_approve, can_comment) %}
+<div class="card">
+  <h2>审批意见</h2>
+  {% if approvals %}
+  <ul class="timeline">
+    {% for a in approvals %}
+    <li class="{{ a.decision }}">
+      <strong>{{ a.approver }}</strong>
+      {% if a.decision == 'approved' %}<span class="tag green">通过</span>
+      {% elif a.decision == 'rejected' %}<span class="tag red">退回</span>
+      {% else %}<span class="tag blue">批注</span>{% endif %}
+      <span class="hint">{{ a.created_at }}</span>
+      {% if a.comment %}<div class="prose">{{ a.comment }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="hint">暂无审批意见</p>{% endif %}
+
+  {% if can_comment %}
+  <form class="approve" method="post" action="{{ url_for('approve', target=target, tid=tid) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <div class="field full"><label>审批意见</label>
+      <textarea name="comment" placeholder="填写审批意见或工作指导 (退回时必填)"></textarea></div>
+    <div class="actions">
+      {% if can_approve %}
+      <button class="btn ok" name="decision" value="approved">审批通过</button>
+      <button class="btn danger" name="decision" value="rejected">退回修改</button>
+      {% endif %}
+      <button class="btn light" name="decision" value="comment">仅添加批注</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro csrf_field() %}<input type="hidden" name="_csrf" value="{{ csrf }}">{% endmacro %}
+
+{% macro user_select(users, selected, name='user_id', label='销售员') %}
+<div class="field"><label>{{ label }}</label>
+  <select name="{{ name }}"><option value="">全部</option>
+    {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if selected|string == u.id|string }}>{{ u.name }}</option>{% endfor %}
+  </select></div>
+{% endmacro %}

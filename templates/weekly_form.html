@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import lv with context %}
+{% block title %}周报{% endblock %}
+{% block body %}
+<h1>{{ '修改' if w else '填写' }}周报: {{ monday }} ~ {{ sunday }}</h1>
+{% if not w %}
+<form class="filters no-print" method="get" style="margin-bottom:12px">
+  <div class="field"><label>选择周 (任选该周一天)</label><input type="date" name="week" value="{{ monday }}" onchange="this.form.submit()"></div>
+</form>
+{% endif %}
+<div class="card">
+  <h2>本周拜访记录 ({{ visits|length }}) <span class="hint">系统自动带出, 供填写参考</span></h2>
+  <div class="table-wrap"><table>
+    <tr><th>日期</th><th>客户</th><th>类型</th><th>洽谈人</th><th>内容</th></tr>
+    {% for v in visits %}
+    <tr><td>{{ v.visit_date }}</td><td>{{ lv(v.level) }} {{ v.customer }}</td><td>{{ v.visit_type }}</td>
+      <td>{{ v.contact_name }}</td><td class="clip">{{ v.content }}</td></tr>
+    {% else %}<tr><td colspan="5" class="empty">本周暂无拜访记录</td></tr>{% endfor %}
+  </table></div>
+</div>
+<form class="card" method="post">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="week" value="{{ monday }}">
+  <div class="grid">
+    <div class="field full"><label>本周工作总结 <span class="req">*</span></label>
+      <textarea name="summary" required style="min-height:140px" placeholder="主要工作、重点客户进展、订单/回款情况">{{ form.summary or '' }}</textarea></div>
+    <div class="field full"><label>问题与需要的支持</label>
+      <textarea name="problems" placeholder="遇到的困难、需要公司/主管协调的事项">{{ form.problems or '' }}</textarea></div>
+    <div class="field full"><label>下周工作计划</label>
+      <textarea name="next_plan" placeholder="计划拜访客户、目标">{{ form.next_plan or '' }}</textarea></div>
+  </div>
+  <div class="actions">
+    <button class="btn light" name="action" value="save">保存草稿</button>
+    <button class="btn" name="action" value="submit">提交</button>
+  </div>
+</form>
+{% endblock %}

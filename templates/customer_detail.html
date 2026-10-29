@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, lv with context %}
+{% block title %}{{ c.name }}{% endblock %}
+{% block body %}
+<div class="head"><h1>{{ lv(c.level) }} {{ c.name }} {{ tag(c.status) }}</h1>
+  {% if me.role != 'sales' %}<a class="btn light" href="{{ url_for('customer_form', cid=c.id) }}">修改</a>{% endif %}</div>
+<div class="cols">
+  <div class="card"><dl class="info">
+    <dt>行业</dt><dd>{{ c.industry or '-' }}</dd><dt>地区</dt><dd>{{ c.region or '-' }}</dd>
+    <dt>地址</dt><dd>{{ c.address or '-' }}</dd><dt>负责销售</dt><dd>{{ c.owner_name or '-' }}</dd>
+    <dt>备注</dt><dd class="prose">{{ c.remark or '-' }}</dd>
+  </dl></div>
+  <div class="card"><h2>联系人 ({{ contacts|length }})</h2><table>
+    {% for p in contacts %}<tr><td>{{ p.name }}</td><td>{{ p.title }}</td><td>{{ p.phone }}</td></tr>
+    {% else %}<tr><td class="empty">拜访时填写的洽谈人会自动沉淀到这里</td></tr>{% endfor %}</table></div>
+</div>
+<div class="card"><h2>拜访历史 ({{ visits|length }})</h2><div class="table-wrap"><table>
+  <tr><th>日期</th><th>销售员</th><th>类型</th><th>洽谈人员</th><th>洽谈内容</th><th>下一步</th></tr>
+  {% for v in visits %}<tr><td><a href="{{ url_for('visit_detail', vid=v.id) }}">{{ v.visit_date }}</a></td><td>{{ v.sales }}</td>
+    <td>{{ v.visit_type }}</td><td>{{ v.contact_name }} {{ v.contact_title }}</td><td class="prose">{{ v.content }}</td><td>{{ v.next_step }}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">暂无拜访</td></tr>{% endfor %}
+</table></div></div>
+{% endblock %}

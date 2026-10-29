@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}待审批{% endblock %}
+{% block body %}
+<h1>待我审批 ({{ items|length }})</h1>
+<div class="card table-wrap"><table>
+  <tr><th>类型</th><th>销售员</th><th>内容</th><th></th></tr>
+  {% for i in items %}
+  <tr><td>{{ i.type }}</td><td>{{ i.sales }}</td><td>{{ i.title }}</td><td><a class="btn sm" href="{{ i.url }}">去审批</a></td></tr>
+  {% else %}<tr><td colspan="4" class="empty">没有待审批的报告</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

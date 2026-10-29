@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}客户{% endblock %}
+{% block body %}
+<h1>{{ '修改客户' if c else ('新增客户' if me.role != 'sales' else '申请新增客户') }}</h1>
+<form class="card" method="post">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="grid">
+    <div class="field"><label>客户名称 <span class="req">*</span></label><input name="name" value="{{ form.name or '' }}" required placeholder="请填写营业执照上的全称"></div>
+    <div class="field"><label>客户等级</label><select name="level">
+      {% for l, d in [('A','A 重点客户'),('B','B 普通客户'),('C','C 潜在客户')] %}<option value="{{ l }}" {{ 'selected' if (form.level or 'B') == l }}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="field"><label>行业</label><input name="industry" value="{{ form.industry or '' }}"></div>
+    <div class="field"><label>地区</label><input name="region" value="{{ form.region or '' }}" placeholder="省/市"></div>
+    <div class="field full"><label>地址</label><input name="address" value="{{ form.address or '' }}"></div>
+    {% if me.role != 'sales' %}
+    <div class="field"><label>负责销售</label><select name="owner_id"><option value="">-- 未分配 --</option>
+      {% for o in owners %}<option value="{{ o.id }}" {{ 'selected' if form.owner_id|string == o.id|string }}>{{ o.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label>状态</label><select name="status">
+      {% for k in ['active','pending','disabled'] %}<option value="{{ k }}" {{ 'selected' if (form.status or 'active') == k }}>{{ STATUS[k][0] }}</option>{% endfor %}</select></div>
+    {% endif %}
+    <div class="field full"><label>备注</label><textarea name="remark" style="min-height:60px">{{ form.remark or '' }}</textarea></div>
+  </div>
+  {% if me.role == 'sales' %}<p class="hint">销售员新增的客户需经主管审核, 通过后才会出现在拜访记录的客户名单中。</p>{% endif %}
+  <div class="actions"><button class="btn">保存</button><a class="btn light" href="{{ url_for('customers') }}">取消</a></div>
+</form>
+{% endblock %}

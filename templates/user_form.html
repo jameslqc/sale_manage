@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}账号{% endblock %}
+{% block body %}
+<h1>{{ '编辑账号' if u else '新增账号' }}</h1>
+<form class="card" method="post">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="grid">
+    <div class="field"><label>用户名 (登录名) <span class="req">*</span></label><input name="username" value="{{ form.username or '' }}" required></div>
+    <div class="field"><label>姓名 <span class="req">*</span></label><input name="name" value="{{ form.name or '' }}" required></div>
+    <div class="field"><label>角色 / 等级 <span class="req">*</span></label><select name="role" id="role">
+      {% for k, v in ROLES.items() %}<option value="{{ k }}" {{ 'selected' if form.role == k }}>{{ v }}</option>{% endfor %}</select></div>
+    <div class="field" id="mgr"><label>所属主管 (审批人)</label><select name="manager_id"><option value="">-- 无 --</option>
+      {% for m in managers %}<option value="{{ m.id }}" {{ 'selected' if form.manager_id|string == m.id|string }}>{{ m.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label>负责区域</label><input name="region" value="{{ form.region or '' }}"></div>
+    <div class="field"><label>手机</label><input name="phone" value="{{ form.phone or '' }}"></div>
+    <div class="field"><label>{{ '重置密码 (留空则不修改)' if u else '初始密码' }}{% if not u %} <span class="req">*</span>{% endif %}</label>
+      <input name="password" type="text" autocomplete="new-password" {{ '' if u else 'required' }}>
+      <span class="hint">用户首次登录时须修改密码</span></div>
+    <div class="field"><label>状态</label><label style="color:var(--text)"><input type="checkbox" name="active" value="1" style="width:auto" {{ 'checked' if form.active }}> 启用</label></div>
+    {% if u and owned %}
+    <div class="field full"><label>离职交接: 将其负责的 {{ owned }} 家客户改派给</label>
+      <select name="transfer_to"><option value="">-- 不改派 --</option>
+        {% for o in others %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}</select>
+      <span class="hint">员工离职时: 取消"启用"并选择接手人, 历史拜访记录保留在原销售员名下</span></div>
+    {% endif %}
+  </div>
+  <div class="actions"><button class="btn">保存</button><a class="btn light" href="{{ url_for('users') }}">取消</a></div>
+</form>
+<div class="card hint">
+  <strong>权限说明</strong><br>
+  销售员: 只能查看和填写自己的拜访、出差、周报、月报; 可申请新增客户。<br>
+  销售主管: 查看所属销售员的全部数据并审批; 维护客户名单。<br>
+  系统管理员: 全部数据、账号管理、操作日志。
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  var r = document.getElementById('role'), m = document.getElementById('mgr');
+  function t() { m.style.display = r.value === 'sales' ? '' : 'none'; }
+  r.addEventListener('change', t); t();
+</script>
+{% endblock %}

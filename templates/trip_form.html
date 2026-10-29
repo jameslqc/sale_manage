@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}出差报告{% endblock %}
+{% block body %}
+<h1>{{ '修改' if t else '新建' }}出差报告</h1>
+<form class="card" method="post">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="grid">
+    <div class="field"><label>出发日期 <span class="req">*</span></label><input type="date" name="start_date" value="{{ form.start_date or '' }}" required></div>
+    <div class="field"><label>返回日期 <span class="req">*</span></label><input type="date" name="end_date" value="{{ form.end_date or '' }}" required></div>
+    <div class="field"><label>出差地点 <span class="req">*</span></label><input name="destination" value="{{ form.destination or '' }}" placeholder="如: 苏州、无锡" required></div>
+    <div class="field"><label>交通方式</label><input name="transport" value="{{ form.transport or '' }}" list="tp" placeholder="高铁/飞机/自驾">
+      <datalist id="tp"><option>高铁</option><option>飞机</option><option>自驾</option><option>大巴</option></datalist></div>
+    <div class="field full"><label>出差目的</label><textarea name="purpose" style="min-height:60px">{{ form.purpose or '' }}</textarea></div>
+  </div>
+  <h2 style="margin-top:20px">费用 (元)</h2>
+  <div class="grid">
+    <div class="field"><label>交通费</label><input type="number" step="0.01" min="0" name="cost_transport" value="{{ form.cost_transport or '' }}"></div>
+    <div class="field"><label>住宿费</label><input type="number" step="0.01" min="0" name="cost_hotel" value="{{ form.cost_hotel or '' }}"></div>
+    <div class="field"><label>餐费/补贴</label><input type="number" step="0.01" min="0" name="cost_meal" value="{{ form.cost_meal or '' }}"></div>
+    <div class="field"><label>其他</label><input type="number" step="0.01" min="0" name="cost_other" value="{{ form.cost_other or '' }}"></div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="field full"><label>出差总结</label>
+      <textarea name="summary" placeholder="本次出差整体收获、问题与后续安排 (拜访明细请在保存后添加拜访记录)">{{ form.summary or '' }}</textarea></div>
+  </div>
+  <p class="hint">建议流程: 先保存草稿 → 在出差期间逐条添加拜访记录 → 回来后填写总结并提交审批。</p>
+  <div class="actions">
+    <button class="btn light" name="action" value="save">保存草稿</button>
+    <button class="btn" name="action" value="submit" onclick="return confirm('提交后不能修改, 确定提交审批?')">提交审批</button>
+  </div>
+</form>
+{% endblock %}

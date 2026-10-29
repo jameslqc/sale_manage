@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag with context %}
+{% block title %}月度报告{% endblock %}
+{% block body %}
+<div class="head"><h1>月度出差报告 · {{ month }}</h1>
+  <form class="filters" method="get" style="margin:0">
+    <div class="field"><label>月份</label><input type="month" name="month" value="{{ month }}" max="{{ current }}" onchange="this.form.submit()"></div>
+  </form>
+</div>
+<p class="hint">每个自然月结束后, 系统自动为所有销售员生成上月报告 (统计 + 分析)。月中也可手动生成当月预览; 已提交或已审批的报告不会被覆盖。</p>
+<form method="post" action="{{ url_for('monthly_generate') }}" class="actions" style="margin:0 0 16px">
+  <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="month" value="{{ month }}">
+  <button class="btn light">{{ '为团队' if me.role != 'sales' else '' }}生成 / 刷新 {{ month }} 报告</button>
+</form>
+
+<div class="card table-wrap"><table>
+  <tr><th>销售员</th><th class="num">拜访</th><th class="num">客户</th><th class="num">新客户</th><th class="num">出差天数</th>
+    <th class="num">差旅费(元)</th><th class="num">单次拜访成本</th><th class="num">A类覆盖</th><th>状态</th></tr>
+  {% for r, s in rows %}
+  <tr><td><a href="{{ url_for('monthly_detail', mid=r.id) }}">{{ r.sales }}</a></td>
+    <td class="num">{{ s.visit_count }}</td><td class="num">{{ s.customer_count }}</td><td class="num">{{ s.new_customers|length }}</td>
+    <td class="num">{{ s.trip_days }}</td><td class="num">{{ s.cost_total|money }}</td><td class="num">{{ s.cost_per_visit|money }}</td>
+    <td class="num">{% if s.owned_a %}{{ s.owned_a - s.a_missed|length }}/{{ s.owned_a }}{% else %}-{% endif %}</td>
+    <td>{{ tag(r.status) }}</td></tr>
+  {% else %}<tr><td colspan="9" class="empty">该月报告尚未生成</td></tr>{% endfor %}
+  {% if rows|length > 1 %}
+  <tr style="font-weight:700"><td>合计</td>
+    <td class="num">{{ rows|sum(attribute='1.visit_count') }}</td><td></td>
+    <td class="num">{{ rows|map(attribute='1')|map(attribute='new_customers')|map('length')|sum }}</td>
+    <td class="num">{{ rows|sum(attribute='1.trip_days') }}</td>
+    <td class="num">{{ rows|sum(attribute='1.cost_total')|money }}</td><td colspan="3"></td></tr>
+  {% endif %}
+</table></div>
+
+{% if history %}
+<div class="card"><h2>我的历史月报</h2>
+  {% for h in history %}<a class="btn light sm" style="margin:0 6px 6px 0" href="{{ url_for('monthly_detail', mid=h.id) }}">{{ h.month }} · {{ STATUS[h.status][0] }}</a>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

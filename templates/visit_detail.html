@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import lv with context %}
+{% block title %}拜访详情{% endblock %}
+{% block body %}
+<div class="head"><h1>拜访详情</h1>
+  {% if editable %}<div class="actions" style="margin:0">
+    <a class="btn light" href="{{ url_for('visit_form', vid=v.id) }}">修改</a>
+    <form method="post" action="{{ url_for('visit_delete', vid=v.id) }}" onsubmit="return confirm('确定删除这条拜访记录?')">
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><button class="btn danger">删除</button></form>
+  </div>{% endif %}
+</div>
+<div class="card"><dl class="info">
+  <dt>客户</dt><dd>{{ lv(v.level) }} <a href="{{ url_for('customer_detail', cid=v.customer_id) }}">{{ v.customer }}</a></dd>
+  <dt>销售员</dt><dd>{{ v.sales }}</dd>
+  <dt>拜访时间</dt><dd>{{ v.visit_date }} {{ v.start_time }}{{ ' - ' ~ v.end_time if v.end_time }}</dd>
+  <dt>拜访类型</dt><dd>{{ v.visit_type }}</dd>
+  <dt>所属出差</dt><dd>{% if v.trip_id %}<a href="{{ url_for('trip_detail', tid=v.trip_id) }}">{{ v.trip_dest }}</a>{% else %}本地拜访{% endif %}</dd>
+  <dt>洽谈人</dt><dd>{{ v.contact_name }} {{ v.contact_title }} {{ v.contact_phone }}</dd>
+  <dt>其他参与人</dt><dd>{{ v.attendees or '-' }}</dd>
+  <dt>洽谈内容</dt><dd class="prose">{{ v.content }}</dd>
+  <dt>拜访成果</dt><dd class="prose">{{ v.result or '-' }}</dd>
+  <dt>商机阶段</dt><dd>{{ v.stage or '-' }}{% if v.amount %} · 预计 {{ v.amount }} 万元{% endif %}</dd>
+  <dt>下一步</dt><dd>{{ v.next_step or '-' }}{% if v.next_date %} ({{ v.next_date }}){% endif %}</dd>
+  <dt>录入时间</dt><dd class="hint">{{ v.created_at }}</dd>
+</dl></div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tag, approval_panel with context %}
+{% block title %}{{ m.month }} 月度报告{% endblock %}
+{% block body %}
+<div class="head"><h1>{{ m.sales }} · {{ m.month }} 月度出差报告 {{ tag(m.status) }}</h1>
+  <button class="btn light no-print" onclick="window.print()">打印 / 导出 PDF</button></div>
+<p class="hint">生成时间 {{ m.generated_at }}{{ ' · ' ~ m.region if m.region }}</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="label">拜访次数</div><div class="value">{{ s.visit_count }}</div>
+    <div class="sub">上月 {{ s.prev_visits }}</div></div>
+  <div class="kpi"><div class="label">覆盖客户 / 新客户</div><div class="value">{{ s.customer_count }} / {{ s.new_customers|length }}</div></div>
+  <div class="kpi"><div class="label">出差次数 / 天数</div><div class="value">{{ s.trip_count }} / {{ s.trip_days }}</div></div>
+  <div class="kpi"><div class="label">差旅费用 (元)</div><div class="value">{{ s.cost_total|money }}</div>
+    <div class="sub">上月 {{ s.prev_cost|money }}</div></div>
+  <div class="kpi"><div class="label">单次拜访成本 (元)</div><div class="value">{{ s.cost_per_visit|money }}</div></div>
+  <div class="kpi"><div class="label">周报提交</div><div class="value">{{ s.weekly_done }} / {{ s.weeks }}</div></div>
+</div>
+
+<div class="card"><h2>系统分析</h2>
+  <ul class="analysis">{% for line in m.analysis.split('\n') %}<li>{{ line }}</li>{% endfor %}</ul>
+</div>
+
+<div class="cols">
+  <div class="card"><h2>拜访类型分布</h2><table>
+    {% for t, n in s.by_type %}<tr><td>{{ t }}</td><td style="width:50%"><div class="meter"><span style="width:{{ (n / s.visit_count * 100)|round }}%"></span></div></td><td class="num">{{ n }}</td></tr>
+    {% else %}<tr><td class="empty">无</td></tr>{% endfor %}</table></div>
+  <div class="card"><h2>客户等级分布</h2><table>
+    {% for k, n in s.by_level.items() %}<tr><td>{{ k }} 类</td><td style="width:50%"><div class="meter"><span style="width:{{ (n / s.visit_count * 100)|round if s.visit_count else 0 }}%"></span></div></td><td class="num">{{ n }}</td></tr>{% endfor %}
+  </table>
+  {% if s.by_stage %}<h2 style="margin-top:14px">商机阶段</h2><table>
+    {% for k, n in s.by_stage %}<tr><td>{{ k }}</td><td class="num">{{ n }}</td></tr>{% endfor %}
+    <tr><td>预计商机金额</td><td class="num">{{ s.pipeline }} 万元</td></tr></table>{% endif %}
+  </div>
+  <div class="card"><h2>拜访最多的客户</h2><table>
+    {% for c, n in s.top_customers %}<tr><td>{{ c }}</td><td class="num">{{ n }} 次</td></tr>{% else %}<tr><td class="empty">无</td></tr>{% endfor %}</table></div>
+</div>
+
+<div class="card"><h2>出差行程</h2><div class="table-wrap"><table>
+  <tr><th>日期</th><th>地点</th><th class="num">本月天数</th><th class="num">费用(元)</th><th>状态</th></tr>
+  {% for t in s.trips %}<tr><td><a href="{{ url_for('trip_detail', tid=t.id) }}">{{ t.start }} ~ {{ t.end }}</a></td><td>{{ t.destination }}</td>
+    <td class="num">{{ t.days }}</td><td class="num">{{ t.cost|money }}</td><td>{{ tag(t.status) }}</td></tr>
+  {% else %}<tr><td colspan="5" class="empty">本月无出差</td></tr>{% endfor %}
+  {% if s.trips %}<tr><td colspan="4" class="hint">交通 {{ s.cost.transport|money }} · 住宿 {{ s.cost.hotel|money }} · 餐补 {{ s.cost.meal|money }} · 其他 {{ s.cost.other|money }}</td><td></td></tr>{% endif %}
+</table></div></div>
+
+{% if s.a_missed or s.stale %}
+<div class="card"><h2>需关注客户</h2>
+  {% if s.a_missed %}<p><strong>本月未拜访的 A 类客户:</strong> {{ s.a_missed|join('、') }}</p>{% endif %}
+  {% if s.stale %}<p><strong>超过 60 天未拜访:</strong>
+    {% for c in s.stale %}{{ c.name }} ({{ c.level }}类, {{ c.last or '从未拜访' }}){{ '、' if not loop.last }}{% endfor %}</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="card"><h2>拜访明细</h2><div class="table-wrap"><table>
+  <tr><th>日期</th><th>客户</th><th>类型</th><th>洽谈人员</th><th>洽谈内容</th><th>成果</th></tr>
+  {% for v in s.visits %}<tr><td>{{ v.date }}</td><td>{{ v.customer }}</td><td>{{ v.type }}</td><td>{{ v.contact }}</td>
+    <td class="prose">{{ v.content }}</td><td class="prose">{{ v.result }}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">无</td></tr>{% endfor %}
+</table></div></div>
+
+<div class="card"><h2>销售员补充说明</h2>
+  {% if mine and m.status in ('generated', 'rejected') %}
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <textarea name="self_summary" placeholder="对本月工作的总结、未达成原因说明、下月计划">{{ m.self_summary }}</textarea>
+    <div class="actions">
+      <button class="btn light" name="action" value="save">保存</button>
+      <button class="btn light" name="action" value="refresh" formnovalidate>刷新统计数据</button>
+      <button class="btn" name="action" value="submit" onclick="return confirm('提交后不能修改, 确定提交审批?')">提交审批</button>
+    </div>
+  </form>
+  {% else %}<div class="prose">{{ m.self_summary or '(未填写)' }}</div>{% endif %}
+</div>
+{{ approval_panel('monthly', m.id, approvals, can_approve, can_comment) }}
+{% endblock %}
